@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/gyosei-shoshi-visualizer/sw.js', { scope: '/gyosei-shoshi-visualizer/' })})}
