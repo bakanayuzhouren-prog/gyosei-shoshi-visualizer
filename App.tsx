@@ -30,7 +30,8 @@ const App: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "エラーが発生しました。もう一度お試しください。");
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      setError(errorMessage || "エラーが発生しました。詳細を確認してください。");
       setLoadingState(LoadingState.ERROR);
     }
   };
