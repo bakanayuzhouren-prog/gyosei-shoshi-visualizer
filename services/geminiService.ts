@@ -36,10 +36,14 @@ export const generateDiagram = async (
   text: string,
   imageBase64?: string
 ): Promise<DiagramResponse> => {
-  // Always use process.env.API_KEY directly in constructor
-  const apiKey = process.env.API_KEY;
+  // Try to get API key from various sources, prioritizing VITE_ prefix
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY ||
+    import.meta.env.VITE_API_KEY ||
+    process.env.API_KEY ||
+    process.env.GEMINI_API_KEY;
+
   if (!apiKey) {
-    throw new Error("API Key is missing in the application. Please check vite.config.ts and Vercel settings.");
+    throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in Vercel environment variables.");
   }
   const ai = new GoogleGenAI({ apiKey });
 
