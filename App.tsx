@@ -29,9 +29,19 @@ const App: React.FC = () => {
       }, 800);
 
     } catch (err: any) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
-      setError(errorMessage || "エラーが発生しました。詳細を確認してください。");
+      console.error("Full error object:", err);
+      let errorMessage = "不明なエラーが発生しました";
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        if (err.stack) errorMessage += `\nStack: ${err.stack}`;
+      } else if (typeof err === 'object') {
+        errorMessage = JSON.stringify(err, null, 2);
+      } else {
+        errorMessage = String(err);
+      }
+
+      setError(errorMessage);
       setLoadingState(LoadingState.ERROR);
     }
   };

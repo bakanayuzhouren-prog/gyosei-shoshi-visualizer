@@ -37,7 +37,11 @@ export const generateDiagram = async (
   imageBase64?: string
 ): Promise<DiagramResponse> => {
   // Always use process.env.API_KEY directly in constructor
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing in the application. Please check vite.config.ts and Vercel settings.");
+  }
+  const ai = new GoogleGenAI({ apiKey });
 
   const systemInstruction = `
     You are an expert tutor for the Japanese Administrative Scrivener (Gyosei Shoshi) Exam.
