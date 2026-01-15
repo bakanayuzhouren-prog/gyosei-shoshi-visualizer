@@ -15,29 +15,29 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      qrcode(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
-        manifest: {
-          name: 'Gyosei Shoshi Visualizer',
-          short_name: 'GS Vis',
-          description: 'Visualizing Gyosei Shoshi concepts',
-          theme_color: '#ffffff',
-          icons: [
-            {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
-            }
-          ]
-        }
-      })
+      // qrcode(),
+      // VitePWA({
+      //   registerType: 'autoUpdate',
+      //   includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      //   manifest: {
+      //     name: 'Gyosei Shoshi Visualizer',
+      //     short_name: 'GS Vis',
+      //     description: 'Visualizing Gyosei Shoshi concepts',
+      //     theme_color: '#ffffff',
+      //     icons: [
+      //       {
+      //         src: 'pwa-192x192.png',
+      //         sizes: '192x192',
+      //         type: 'image/png'
+      //       },
+      //       {
+      //         src: 'pwa-512x512.png',
+      //         sizes: '512x512',
+      //         type: 'image/png'
+      //       }
+      //     ]
+      //   }
+      // })
     ],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
@@ -47,6 +47,9 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    build: {
+      minify: false
     }
   };
 });
