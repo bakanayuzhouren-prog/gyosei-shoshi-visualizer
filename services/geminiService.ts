@@ -84,7 +84,7 @@ export const generateDiagram = async (
 
     // Use gemini-1.5-flash for stability and quota limits
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       systemInstruction: systemInstruction,
       generationConfig: {
         responseMimeType: "application/json",
