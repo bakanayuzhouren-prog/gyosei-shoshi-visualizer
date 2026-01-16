@@ -83,7 +83,7 @@ export const generateDiagram = async (
     // Use gemini-3-flash-preview for both text and multimodal inputs.
     // This model supports responseSchema which is required for our structured output.
     // gemini-2.5-flash-image does not support responseSchema.
-    const modelName = "gemini-2.0-flash";
+    const modelName = "gemini-1.5-flash";
 
     const response = await ai.models.generateContent({
       model: modelName,
