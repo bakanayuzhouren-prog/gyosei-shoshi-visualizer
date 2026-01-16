@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Schema, Type } from "@google/generative-ai";
 import { DiagramResponse } from "../types";
 
 // Schema definition for structured output
