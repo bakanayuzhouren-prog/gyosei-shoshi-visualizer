@@ -16,6 +16,10 @@ function getApiKey() {
     }
 }
 
+const modelsToTest = [
+    "gemini-flash-latest"
+];
+
 async function testConnection() {
     const apiKey = getApiKey();
     if (!apiKey) {
@@ -25,20 +29,18 @@ async function testConnection() {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Use the standard model name
-    const modelName = "gemini-1.5-flash";
-    console.log(`Testing model: ${modelName}...`);
-
-    try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent("Hello");
-        console.log(`✅ Success! Response: ${result.response.text()}`);
-    } catch (error) {
-        console.error(`❌ Failed: ${error.message}`);
-        if (error.response) {
-            console.error("Details:", JSON.stringify(error.response, null, 2));
+    for (const modelName of modelsToTest) {
+        console.log(`Testing model: ${modelName}...`);
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent("Hello");
+            console.log(`✅ Success with ${modelName}! Response: ${result.response.text()}`);
+            return; // Stop on first success
+        } catch (error) {
+            console.error(`❌ Failed with ${modelName}: ${error.message} `);
         }
     }
+    console.log("All models failed.");
 }
 
 testConnection();

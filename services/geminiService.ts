@@ -7,29 +7,48 @@ const responseSchema: Schema = {
   properties: {
     title: {
       type: SchemaType.STRING,
-      description: "A concise title for the legal concept or case study.",
+      description: "A concise title in Japanese (日本語のタイトル).",
     },
     summary: {
       type: SchemaType.STRING,
-      description: "A brief, easy-to-understand summary of the concept (approx. 2-3 sentences).",
+      description: "A brief, easy-to-understand summary in Japanese (日本語で2-3文の要約).",
     },
     mermaidCode: {
       type: SchemaType.STRING,
-      description: "Valid Mermaid.js code (graph TD, sequenceDiagram, or stateDiagram-v2) that visualizes the relationship, process, or logic. Do NOT include ```mermaid tags.",
+      description: "Valid Mermaid.js code. Node labels MUST be in Japanese.",
     },
     keyPoints: {
       type: SchemaType.ARRAY,
       items: {
         type: SchemaType.OBJECT,
         properties: {
-          point: { type: SchemaType.STRING, description: "The main keyword or concept." },
-          explanation: { type: SchemaType.STRING, description: "A short explanation of why this point matters for the exam." },
+          point: { type: SchemaType.STRING, description: "The main keyword or concept in Japanese (日本語のキーワード)." },
+          explanation: { type: SchemaType.STRING, description: "A short explanation in Japanese (日本語の解説)." },
         },
         required: ["point", "explanation"],
       },
     },
   },
   required: ["title", "summary", "mermaidCode", "keyPoints"],
+};
+
+const generateWithRetry = async (model: any, parts: any[], retries = 3, delay = 2000): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await model.generateContent(parts);
+    } catch (error: any) {
+      const isQuotaError = error.message?.includes("429") || error.message?.includes("Quota exceeded");
+      const isServerOverload = error.message?.includes("503");
+
+      if (i < retries - 1 && (isQuotaError || isServerOverload)) {
+        console.warn(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+        await new Promise(res => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
+        continue;
+      }
+      throw error;
+    }
+  }
 };
 
 export const generateDiagram = async (
@@ -51,18 +70,25 @@ export const generateDiagram = async (
 
   const systemInstruction = `
     You are an expert tutor for the Japanese Administrative Scrivener (Gyosei Shoshi) Exam.
-    Your goal is to take legal texts, study notes, or case studies and convert them into clear, visual diagrams (Mermaid.js) and structured summaries.
+    Your goal is to take legal texts, study notes, or case studies and convert them into clear, visual diagrams (Mermaid.js) and structured summaries IN JAPANESE.
     
     GUIDELINES:
-    1. Focus on relationships (Plaintiff vs. Defendant, Government Agency vs. Citizen).
-    2. Simplify complex legal phrasing into exam-relevant keywords.
-    3. For the Mermaid diagram:
+    1. **LANGUAGE**: 
+       - Title, Summary, Explanations, and **Node Labels** MUST be in JAPANESE.
+       - **Node IDs** and Mermaid syntax keywords MUST be in ENGLISH (ASCII).
+    2. Focus on relationships (Plaintiff vs. Defendant, Government Agency vs. Citizen).
+    3. Simplify complex legal phrasing into exam-relevant keywords.
+    4. For the Mermaid diagram:
        - Use 'graph TD' (Top-Down) for hierarchies or processes.
        - Use 'sequenceDiagram' for time-based administrative procedures (e.g., permit application steps).
        - Use 'stateDiagram-v2' for status changes (e.g., valid -> void -> cancelled).
-       - Ensure standard ASCII characters are used for node IDs to prevent syntax errors, but use Japanese for labels (e.g., A["申請者"]).
+       - **CRITICAL**: Use ONLY Roman alphabets and numbers for Node IDs (e.g., A, B1, NodeX). NO Japanese or spaces in IDs.
+       - Correct: node1["行政庁"] --> node2["処分"]
+       - Incorrect: 行政庁 --> 処分
+       - **AVOID using 'subgraph'**. It causes errors. Use simple connections only.
        - Style the nodes to be readable.
-    4. If the input is an image of handwriting, transcribe the intent accurately before generating the diagram.
+    5. If the input is an image of handwriting, transcribe the intent accurately before generating the diagram.
+    6. Output CLEAN Mermaid code.
   `;
 
   try {
@@ -82,9 +108,9 @@ export const generateDiagram = async (
       parts.push({ text });
     }
 
-    // Use gemini-1.5-flash for stability and quota limits
+    // Use gemini-flash-latest to likely target the most stable current flash model
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-flash-latest",
       systemInstruction: systemInstruction,
       generationConfig: {
         responseMimeType: "application/json",
@@ -93,16 +119,35 @@ export const generateDiagram = async (
       },
     });
 
-    const result = await model.generateContent(parts);
+    const result = await generateWithRetry(model, parts);
     const responseText = result.response.text();
 
     if (responseText) {
-      return JSON.parse(responseText) as DiagramResponse;
+      const parsedResponse = JSON.parse(responseText) as DiagramResponse;
+
+      // Safety: Remove markdown code block syntax if the AI included it despite instructions
+      if (parsedResponse.mermaidCode) {
+        parsedResponse.mermaidCode = parsedResponse.mermaidCode
+          .replace(/```mermaid/g, '')
+          .replace(/```/g, '')
+          .trim();
+      }
+
+      return parsedResponse;
     } else {
       throw new Error("No response text generated.");
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+
+    if (error.message?.includes("429") || error.message?.includes("Quota exceeded")) {
+      throw new Error("Gemini APIの利用制限に達しました。自動再試行も失敗しました。数分待ってから再度お試しください。");
+    }
+
+    if (error.message?.includes("503")) {
+      throw new Error("Gemini APIが一時的に混雑しています。自動再試行も失敗しました。しばらくしてから再度お試しください。");
+    }
+
     throw error;
   }
 };
