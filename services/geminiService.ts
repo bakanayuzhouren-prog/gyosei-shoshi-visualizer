@@ -1,29 +1,29 @@
-import { GoogleGenAI, Schema, Type } from "@google/generative-ai";
+import { GoogleGenerativeAI, Schema, SchemaType } from "@google/generative-ai";
 import { DiagramResponse } from "../types";
 
 // Schema definition for structured output
 const responseSchema: Schema = {
-  type: Type.OBJECT,
+  type: SchemaType.OBJECT,
   properties: {
     title: {
-      type: Type.STRING,
+      type: SchemaType.STRING,
       description: "A concise title for the legal concept or case study.",
     },
     summary: {
-      type: Type.STRING,
+      type: SchemaType.STRING,
       description: "A brief, easy-to-understand summary of the concept (approx. 2-3 sentences).",
     },
     mermaidCode: {
-      type: Type.STRING,
+      type: SchemaType.STRING,
       description: "Valid Mermaid.js code (graph TD, sequenceDiagram, or stateDiagram-v2) that visualizes the relationship, process, or logic. Do NOT include ```mermaid tags.",
     },
     keyPoints: {
-      type: Type.ARRAY,
+      type: SchemaType.ARRAY,
       items: {
-        type: Type.OBJECT,
+        type: SchemaType.OBJECT,
         properties: {
-          point: { type: Type.STRING, description: "The main keyword or concept." },
-          explanation: { type: Type.STRING, description: "A short explanation of why this point matters for the exam." },
+          point: { type: SchemaType.STRING, description: "The main keyword or concept." },
+          explanation: { type: SchemaType.STRING, description: "A short explanation of why this point matters for the exam." },
         },
         required: ["point", "explanation"],
       },
@@ -46,8 +46,8 @@ export const generateDiagram = async (
     throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in Vercel environment variables.");
   }
 
-  // Initialize GoogleGenAI with the API key string properly
-  const genAI = new GoogleGenAI(apiKey);
+  // Initialize GoogleGenerativeAI with the API key string properly
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   const systemInstruction = `
     You are an expert tutor for the Japanese Administrative Scrivener (Gyosei Shoshi) Exam.
