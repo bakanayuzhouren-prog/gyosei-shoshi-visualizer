@@ -45,7 +45,9 @@ export const generateDiagram = async (
   if (!apiKey) {
     throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in Vercel environment variables.");
   }
-  const ai = new GoogleGenAI({ apiKey });
+
+  // Initialize GoogleGenAI with the API key string properly
+  const genAI = new GoogleGenAI(apiKey);
 
   const systemInstruction = `
     You are an expert tutor for the Japanese Administrative Scrivener (Gyosei Shoshi) Exam.
@@ -80,26 +82,22 @@ export const generateDiagram = async (
       parts.push({ text });
     }
 
-    // Use gemini-3-flash-preview for both text and multimodal inputs.
-    // This model supports responseSchema which is required for our structured output.
-    // gemini-2.5-flash-image does not support responseSchema.
-    const modelName = "gemini-1.5-flash";
-
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: {
-        parts: parts,
-      },
-      config: {
-        systemInstruction: systemInstruction,
+    // Use gemini-1.5-flash for stability and quota limits
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction: systemInstruction,
+      generationConfig: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: 0.3,
       },
     });
 
-    if (response.text) {
-      return JSON.parse(response.text) as DiagramResponse;
+    const result = await model.generateContent(parts);
+    const responseText = result.response.text();
+
+    if (responseText) {
+      return JSON.parse(responseText) as DiagramResponse;
     } else {
       throw new Error("No response text generated.");
     }
