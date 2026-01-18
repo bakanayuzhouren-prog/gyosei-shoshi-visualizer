@@ -58,7 +58,6 @@ export const generateDiagram = async (
   // Try to get API key from various sources, prioritizing VITE_ prefix
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY ||
     import.meta.env.VITE_API_KEY ||
-    process.env.API_KEY ||
     process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
